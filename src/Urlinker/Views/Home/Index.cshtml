@@ -1,0 +1,27 @@
+﻿
+
+@{
+    ViewData["Title"] = "Home Page";
+}
+
+<div class="text-center">
+    <h1 class="display-4">Welcome URl-Shortner</h1>
+    <p>Enter the Url that you want to shorten below</p>
+
+    <div class="container">
+        <div class ="row">&nbsp;</div>
+       
+        <form asp-controller="Home" asp-action="CreateShortName" method ="post" >
+            <div class="form-group">
+                <label for="exampleInputEmail1">Enter the Url that you want to shorten below</label>
+                <input type="text" class="form-control" id="urlName" name="urlName" aria-describedby="emailHelp">
+                <small id="emailHelp" class="form-text text-muted">Enter thee link to shorten above......</small>
+            </div>
+            <button type="submit" class="btn btn-primary">Submit</button>
+        </form>
+
+        <p class ="text-center dosplay-3">@TempData["OriginalUrl"]</p>
+        <p class ="text-center dosplay-3">@TempData["shortUrl"]</p>
+    </div>
+</div>
+
