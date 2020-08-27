@@ -5,6 +5,7 @@
 
 .vscode/
 Repos/
+src/Urlinker/Repos/
 # User-specific files
 *.rsuser
 *.suo

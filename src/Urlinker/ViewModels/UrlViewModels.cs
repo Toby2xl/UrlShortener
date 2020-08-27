@@ -5,5 +5,7 @@ namespace Urlinker.ViewModels
         public string shortenedUrl { get; set; }
         
         public string OriginalUrl { get; set; }
+
+        public string Message { get; set; }
     }
 }

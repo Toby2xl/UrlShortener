@@ -1,13 +1,12 @@
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Urlinker.Models;
 using Urlinker.Repos;
 using Urlinker.ViewModels;
+using Urlinker.Dto;
 
 namespace Urlinker.Controllers
 {
@@ -33,6 +32,12 @@ namespace Urlinker.Controllers
         public async Task<IActionResult> CreateShortName(string urlName)
         {
             if (string.IsNullOrWhiteSpace(urlName)) return Content("Respect yourself pleaase....");
+
+            var erl = new Uri(urlName);
+            Console.WriteLine($"{erl.ToString()}");
+
+            var urlString = new UrlRequestDto();
+            urlString.OriginalUrl = erl.OriginalString;
 
             var urlink = new uLinker()
             {
@@ -70,7 +75,7 @@ namespace Urlinker.Controllers
         }
 
 
-        [Route("{shortName}")]
+        [Route("dev/{shortName}")]
         public async Task<IActionResult> UrlRedirect(string shortName)
         {
             if (!string.IsNullOrWhiteSpace(shortName))

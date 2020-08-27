@@ -1,12 +1,10 @@
 using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
-using Urlinker.Models;
-using Urlinker.Repos;
+using Urlinker.Dto;
+using Urlinker.Dto.Responses;
+using Urlinker.Interfaces;
 using Urlinker.ViewModels;
 
 namespace Urlinker.Controllers
@@ -14,12 +12,11 @@ namespace Urlinker.Controllers
     public class UrlController : Controller
     {
         private readonly ILogger<UrlController> _logger;
-        private readonly ILinker _linker;
-
-        public UrlController(ILogger<UrlController> logger)
+        private readonly IUrlService _urlService;
+        public UrlController(ILogger<UrlController> logger, IUrlService urlService)
         {
             _logger = logger;
-            
+            _urlService = urlService;
         }
 
         [HttpGet]
@@ -29,18 +26,52 @@ namespace Urlinker.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> CreateShortName(string urlName)
+        public async Task<IActionResult> GenerateShortUrl([Bind]UrlRequestDto urlRequest)
         {
-            await Task.Delay(500);
-            return RedirectToAction("Index");
+            if(!string.IsNullOrWhiteSpace(urlRequest.OriginalUrl))
+                return Content("The specified Url is wrong");
+
+            //var response = new UrlAddResponse();
+            var urlVm = new UrlViewModels();
+
+            var response = await _urlService.AddUrl(urlRequest);
+            if(response.IsSuccess == false)
+            {
+                urlVm.Message = response.Message; 
+                return RedirectToAction("Index", urlVm);
+            }
+            urlVm = BuildUrlVm(response);
+            urlVm.OriginalUrl = urlRequest.OriginalUrl;
+            return RedirectToAction("Index", urlVm);
         }
 
         [Route("{shortName}")]
         public async Task<IActionResult> UrlRedirect(string shortName)
         {
-            await Task.Delay(100);
+            if(!string.IsNullOrWhiteSpace(shortName))
+            {
+                //Error might occur on non instantiated variable e.g UrlGetResponse......
+                var UrlToRedirect = await _urlService.GetOriginalUrlByNameAsync(shortName);
+                if(UrlToRedirect.IsSuccess == true)
+                {
+                    return RedirectPermanent(UrlToRedirect.OriginalUrl);
+                }       
+                else
+                {
+                    var urlVm = new UrlViewModels{  Message = UrlToRedirect.Message };
+                    return RedirectToAction("Index", urlVm);
+                }
+            }
             return RedirectToAction("Index");
         }
 
+        private static UrlViewModels BuildUrlVm(UrlAddResponse response)
+        {
+            return new UrlViewModels
+            {
+                shortenedUrl = response.newShortenUrl,
+                Message = response.Message
+            };
+        }
     }
 }

@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using System;
 using System.Threading.Tasks;
 using Urlinker.Dto;
@@ -6,6 +5,8 @@ using Urlinker.Entities;
 using Urlinker.Extension;
 using Urlinker.Interfaces;
 using Urlinker.Dto.Responses;
+using Microsoft.Extensions.Logging;
+using Microsoft.AspNetCore.Http;
 
 namespace Urlinker.Service
 {
@@ -13,33 +14,43 @@ namespace Urlinker.Service
     {
         private readonly IUrlRepo _urlRepo;
 
-        public UrlService(IUrlRepo urlRepo)
+        private readonly ILogger<UrlService> _logger;
+        private readonly IHttpContextAccessor _accessor;
+
+        public UrlService(IUrlRepo urlRepo, ILogger<UrlService> logger, IHttpContextAccessor  accessor)
         {
             _urlRepo = urlRepo;
+            _logger = logger;
+            _accessor = accessor;
         }
-        public async Task<UrlResponse> AddUrl(UrlRequestDto urlRequest)
+        public async Task<UrlAddResponse> AddUrl(UrlRequestDto urlRequest)
         {
             var validUrl = urlRequest.OriginalUrl;
-
-            var response = new UrlResponse();
-
+            var response = new UrlAddResponse();
             if (!validUrl.isValidUrl())
             {
-                //throw new ArgumentException($"The target url- {validUrl} is not valid");
                 response.IsSuccess = false;
-                response.message = $"The target url - { validUrl} is not valid";
-
+                response.Message = $"The target url - { validUrl} is not valid";
                 return response;
             }
-            else
+            try
             {
                 var newUrl = await mapToDomainAsync(urlRequest);
                 await _urlRepo.CreateUrlAsync(newUrl);
+                response.IsSuccess = true;
+                response.Message = "Successfully created the url";
+                response.newShortenUrl = newUrl.ShortenUrl;
+                _logger.LogInformation(message: $"New Shorten Url with id{newUrl.id} created successfully");
             }
-
-
+            catch (Exception ex)
+            {          
+                response.IsSuccess = false;
+                response.Message = "An error occured while generating the Url";
+                _logger.LogCritical(message: $"Error occured creating Url.......{ex}");
+            }
             return response;
         }
+
 
         public async Task<string> GenerateShortName()
         {
@@ -68,10 +79,17 @@ namespace Urlinker.Service
             return originalUrl != null ? originalUrl : "";
         }
 
-        public async Task<string> GetOriginalUrlByNameAsync(string urlShortName)
+        public async Task<UrlGetResponse> GetOriginalUrlByNameAsync(string urlShortName)
         {
+            var response = new UrlGetResponse();
             var originalUrl = await _urlRepo.GetOriginalUrlByNameAsync(urlShortName);
-            return originalUrl != null ? originalUrl : "";
+            if(originalUrl is null)
+            {
+                response.IsSuccess = false;
+                response.Message = $"There's no such link in existence....";
+            }
+            response.OriginalUrl = originalUrl;
+            return response;
         }
 
         public string GetShortenUrlByName(string urlShortName)
@@ -81,9 +99,10 @@ namespace Urlinker.Service
         }
 
         public async Task<string> GetShortenUrlByNameAsync(string urlShortName)
-        {
+        {   
            var shortenUrl = await _urlRepo.GetShortenUrlByNameAsync(urlShortName);
            return shortenUrl != null ? shortenUrl : " ";
+           
         }
 
         /// <summary>
@@ -107,18 +126,22 @@ namespace Urlinker.Service
         /// <returns>Ulinker object</returns>
         private async Task<Ulinker> mapToDomainAsync(UrlRequestDto urlRequest)
         {
+            string shortUrlName = await GenerateShortName();
+            var baseUrl = $"{_accessor.HttpContext.Request.Scheme}://{_accessor.HttpContext.Request.Host.Value.ToString()}";
+
             var newUrl = new Ulinker
             {
                 id = Guid.NewGuid(),
-                UrlShortName = await GenerateShortName(),
+                UrlShortName = shortUrlName,
                 OriginalUrl = urlRequest.OriginalUrl,
-                ShortenUrl = " ",
+                ShortenUrl = $"{baseUrl}/{shortUrlName}",
                 createdDate = DateTimeOffset.UtcNow.DateTime
             };
             return newUrl;
         }
 
         /*
+        $"{HttpContext.Request.Scheme}://{HttpContext.Request.Host.Value.ToString()}";
         private Ulinker mapToDomain(UrlRequestDto url)
         {
             var newUrl = new  Ulinker

@@ -36,6 +36,7 @@ namespace Urlinker
             services.AddScoped<ILinker, Linker>();
             services.AddScoped<IUrlService, UrlService>();
             services.AddScoped<IUrlRepo, UrlRepo>();
+            services.AddHttpContextAccessor();
             services.AddControllersWithViews();
         }
 
