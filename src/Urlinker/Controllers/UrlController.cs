@@ -26,22 +26,22 @@ namespace Urlinker.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> GenerateShortUrl([Bind]UrlRequestDto urlRequest)
+        public async Task<IActionResult> GenerateShortUrl(string newUrl)
         {
-            if(!string.IsNullOrWhiteSpace(urlRequest.OriginalUrl))
+            if(!string.IsNullOrWhiteSpace(newUrl))
                 return Content("The specified Url is wrong");
 
             //var response = new UrlAddResponse();
             var urlVm = new UrlViewModels();
 
-            var response = await _urlService.AddUrl(urlRequest);
+            var response = await _urlService.AddUrlAsync(newUrl);
             if(response.IsSuccess == false)
             {
                 urlVm.Message = response.Message; 
                 return RedirectToAction("Index", urlVm);
             }
             urlVm = BuildUrlVm(response);
-            urlVm.OriginalUrl = urlRequest.OriginalUrl;
+            urlVm.OriginalUrl =newUrl;
             return RedirectToAction("Index", urlVm);
         }
 

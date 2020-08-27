@@ -23,9 +23,9 @@ namespace Urlinker.Service
             _logger = logger;
             _accessor = accessor;
         }
-        public async Task<UrlAddResponse> AddUrl(UrlRequestDto urlRequest)
+        public async Task<UrlAddResponse> AddUrlAsync(string newUrlToAdd)
         {
-            var validUrl = urlRequest.OriginalUrl;
+            var validUrl = newUrlToAdd;
             var response = new UrlAddResponse();
             if (!validUrl.isValidUrl())
             {
@@ -35,7 +35,7 @@ namespace Urlinker.Service
             }
             try
             {
-                var newUrl = await mapToDomainAsync(urlRequest);
+                var newUrl = await mapToDomainAsync(newUrlToAdd);
                 await _urlRepo.CreateUrlAsync(newUrl);
                 response.IsSuccess = true;
                 response.Message = "Successfully created the url";
@@ -124,7 +124,7 @@ namespace Urlinker.Service
         /// </summary>
         /// <param name="urlRequest"></param>
         /// <returns>Ulinker object</returns>
-        private async Task<Ulinker> mapToDomainAsync(UrlRequestDto urlRequest)
+        private async Task<Ulinker> mapToDomainAsync(string originalUrl)
         {
             string shortUrlName = await GenerateShortName();
             var baseUrl = $"{_accessor.HttpContext.Request.Scheme}://{_accessor.HttpContext.Request.Host.Value.ToString()}";
@@ -133,7 +133,7 @@ namespace Urlinker.Service
             {
                 id = Guid.NewGuid(),
                 UrlShortName = shortUrlName,
-                OriginalUrl = urlRequest.OriginalUrl,
+                OriginalUrl = originalUrl,
                 ShortenUrl = $"{baseUrl}/{shortUrlName}",
                 createdDate = DateTimeOffset.UtcNow.DateTime
             };

@@ -8,7 +8,7 @@ namespace Urlinker.Interfaces
     {
         Task<string> GenerateShortName();
 
-        Task<UrlAddResponse> AddUrl(UrlRequestDto urlRequest);
+        Task<UrlAddResponse> AddUrlAsync(string newUrl);
 
         Task<UrlGetResponse> GetOriginalUrlByNameAsync(string urlShortName);
         string GetOriginalUrlByName(string urlShortName);
